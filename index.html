@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>読み込み中…</title>
+<style>body{font-family:sans-serif;background:#f4f1ea;color:#171713;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0}#msg{text-align:center;padding:1em}</style>
+</head>
+<body>
+<div id="msg">ビューワーを読み込んでいます…<br><span id="pct">0%</span></div>
+<script>
+(function(){
+  var parts=['part1.bin','part2.bin','part3.bin'];
+  var bufs=[], done=0, total=35359999;
+  var pct=document.getElementById('pct');
+  Promise.all(parts.map(function(name){
+    return fetch(name).then(function(r){
+      if(!r.ok) throw new Error(name+' '+r.status);
+      return r.arrayBuffer();
+    }).then(function(b){
+      done+=b.byteLength;
+      pct.textContent=Math.round(done/total*100)+'%';
+      return b;
+    });
+  })).then(function(list){
+    var len=0; list.forEach(function(b){ len+=b.byteLength; });
+    var all=new Uint8Array(len), off=0;
+    list.forEach(function(b){ all.set(new Uint8Array(b),off); off+=b.byteLength; });
+    var html=new TextDecoder('utf-8').decode(all);
+    document.open();
+    document.write(html);
+    document.close();
+  }).catch(function(e){
+    document.getElementById('msg').textContent='読み込みに失敗しました: '+e.message;
+  });
+})();
+</script>
+</body>
+</html>
