@@ -1,0 +1,117 @@
+{
+  "format": "HoloPixel",
+  "version": "0.1",
+  "frames": {
+    "count": 90,
+    "fps": 29.993828430364122,
+    "start": 0,
+    "timecode": null,
+    "loop": true
+  },
+  "refCamera": {
+    "position": [
+      0.0,
+      0.0,
+      -0.6
+    ],
+    "fovY": 65.833,
+    "width": 1080,
+    "height": 1920
+  },
+  "window": {
+    "center": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "size": [
+      0.3496,
+      0.6214
+    ]
+  },
+  "layers": {
+    "count": 4,
+    "order": "near_to_far",
+    "atlas": {
+      "cols": 2,
+      "rows": 2,
+      "tileWidth": 1080,
+      "tileHeight": 1920
+    },
+    "bins": [
+      [
+        0.2,
+        0.8061523765500467
+      ],
+      [
+        0.8061523765500467,
+        1.565429725314801
+      ],
+      [
+        1.565429725314801,
+        2.109375037325663
+      ],
+      [
+        2.109375037325663,
+        50.0
+      ]
+    ]
+  },
+  "depth": {
+    "unit": "meter",
+    "space": "refCameraZ",
+    "near": 0.2,
+    "far": 50.0
+  },
+  "color": {
+    "space": "sRGB",
+    "alpha": "straight"
+  },
+  "files": {
+    "color": "color/{frame:06d}.png",
+    "depth": "depth/{frame:06d}.exr"
+  },
+  "source": {
+    "path": "IMG_1922.MOV",
+    "depthModel": "apple/DepthPro-hf"
+  },
+  "delivery": {
+    "codec": "hap",
+    "atlas": {
+      "width": 720,
+      "height": 1280,
+      "tileWidth": 360,
+      "tileHeight": 640
+    },
+    "color": {
+      "file": "video/color.mov",
+      "format": "hap_alpha"
+    },
+    "depth": {
+      "file": "video/depth.mov",
+      "format": "hevc_main10_lossless",
+      "channel": "r",
+      "bits": 10,
+      "encoding": "inverseDepthPerLayerBin"
+    }
+  },
+  "mobile": {
+    "atlas": {
+      "width": 720,
+      "height": 1280,
+      "tileWidth": 360,
+      "tileHeight": 640
+    },
+    "video": "mobile/hpx.mp4",
+    "still": "mobile/still.webp",
+    "layout": [
+      "color",
+      "depth",
+      "alpha"
+    ],
+    "depth": {
+      "bits": 8,
+      "encoding": "inverseDepthPerLayerBin"
+    }
+  }
+}
