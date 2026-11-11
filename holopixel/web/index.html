@@ -135,16 +135,17 @@ async function load(src, still = false) {
   $('status').textContent = '読み込み中…';
   try {
     const m = await player.load(src, still);
+    if (!m) return;   // 読み込み中に別のシーンへ切り替えられた
     view.ref = m.refCamera.position.slice();
     view.off = [0, 0]; view.distScale = 1; $('dist').value = 100;
     view.smooth = targetEye();
     resize();
-    if (player.isVideo) { await player.video.play().catch(() => {}); }
     $('btnPlay').disabled = !player.isVideo; $('seek').disabled = !player.isVideo;
+    $('btnPlay').textContent = player.isVideo && player.video.paused ? '再生' : '一時停止';
     $('btnStill').textContent = player.isVideo ? '静止画で見る' : '動画で見る';
     const mb = m.mobile.atlas;
     $('status').textContent = `${m.source.path} · ${m.frames.count} フレーム · 窓 ${m.window.size[0]} × ${m.window.size[1]} m · ` +
-      `${player.isVideo ? '動画' : '静止画'} ${mb.width}×${mb.height} ×3`;
+      `${player.isVideo ? '動画' : '静止画'} ${mb.width}×${mb.height} ×3` + (player.note ? ` · ${player.note}` : '');
   } catch (e) {
     $('status').textContent = '読み込めません: ' + e.message;
   }

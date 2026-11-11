@@ -127,31 +127,65 @@ export class HoloPixelPlayer {
 
 	// .hpx フォルダの URL を読む。preferStill = true なら静止画（still.webp）を使う
 	async load(base, preferStill = false) {
+		const token = this._token = (this._token || 0) + 1;   // 連続で切り替えたとき、古い読み込みを捨てる
 		base = base.replace(/\/$/, '');
 		const m = await (await fetch(base + '/manifest.json')).json();
 		if (!m.mobile) throw new Error('mobile プロファイルがありません（tools/hpx_pack.py --profiles mobile）');
+		const still = () => this._image(base + '/' + m.mobile.still);
+		let source = null, note = '';
+		if (!preferStill) {
+			try { source = await this._video(base + '/' + m.mobile.video); }
+			catch (e) { note = e.message; }
+		}
+		if (!source) source = await still();
+		if (token !== this._token) { this._release(source); return null; }
+		// 新しい素材がそろってから差し替える（読み込み中も前のシーンを描き続ける）
+		this._release(this.source);
 		this.m = m;
-		if (this.video) { this.video.pause(); this.video.removeAttribute('src'); this.video.load(); }
-		this.video = null;
-		this.source = await (preferStill ? this._image(base + '/' + m.mobile.still) : this._video(base + '/' + m.mobile.video)
-			.catch(() => this._image(base + '/' + m.mobile.still)));
-		this.isVideo = this.source instanceof HTMLVideoElement;
-		if (this.isVideo) this.video = this.source;
+		this.source = source;
+		this.isVideo = source instanceof HTMLVideoElement;
+		this.video = this.isVideo ? source : null;
+		this.note = note;   // 動画をあきらめて静止画にした理由
 		this.cam = m.refCamera.position.slice();
 		this.ready = true;
 		this._upload();
 		return m;
 	}
 
-	_video(url) {
+	// iPhone は同時に持てる動画の数が限られるので、使い終わった動画は必ず手放す
+	_release(src) {
+		if (!(src instanceof HTMLVideoElement)) return;
+		src.pause();
+		src.removeAttribute('src');
+		src.load();
+		src.remove();
+	}
+
+	// iPhone の Safari は、再生を始めるまで動画を読み込まないことがある。
+	// そのため play() で読み込みを始め、一定時間で読めなければ失敗として静止画に切り替える
+	_video(url, timeoutMs = 8000) {
 		return new Promise((resolve, reject) => {
 			const v = document.createElement('video');
-			Object.assign(v, { muted: true, loop: true, playsInline: true, crossOrigin: 'anonymous', preload: 'auto' });
+			Object.assign(v, { muted: true, defaultMuted: true, loop: true, playsInline: true, crossOrigin: 'anonymous', preload: 'auto' });
+			v.setAttribute('muted', '');
 			v.setAttribute('playsinline', '');
+			// 画面外に置く（DOM に無い動画はフレームが更新されない環境がある）
+			v.style.cssText = 'position:fixed;left:-10px;top:-10px;width:2px;height:2px;opacity:0;pointer-events:none';
+			document.body.appendChild(v);
+			let done = false;
+			const finish = ok => {
+				if (done) return;
+				done = true;
+				clearTimeout(timer);
+				if (ok) resolve(v);
+				else { this._release(v); reject(new Error('動画を再生できませんでした（静止画で表示しています）')); }
+			};
+			const timer = setTimeout(() => finish(false), timeoutMs);
+			v.addEventListener('loadeddata', () => finish(true), { once: true });
+			v.addEventListener('error', () => finish(false), { once: true });
 			v.src = url;
-			v.addEventListener('loadeddata', () => resolve(v), { once: true });
-			v.addEventListener('error', () => reject(new Error('動画を読めません: ' + url)), { once: true });
 			v.load();
+			v.play().catch(() => {});   // 低電力モードなどで自動再生が止められても、読み込みは進める
 		});
 	}
 
