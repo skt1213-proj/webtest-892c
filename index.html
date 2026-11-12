@@ -2,38 +2,320 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>読み込み中…</title>
-<style>body{font-family:sans-serif;background:#f4f1ea;color:#171713;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0}#msg{text-align:center;padding:1em}</style>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:,">
+<title>HoloPixel Viewer</title>
+<style>
+  :root{
+    --bg:#f4f1ea; --surface:#fffdf8; --ink:#171713; --muted:#6b675e; --line:#ddd6c8;
+    --accent:#c73e1d; --accent2:#0f766e; --radius:14px;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    --sans: "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, sans-serif;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#111110; --surface:#1c1c1a; --ink:#f2efe6; --muted:#a8a295; --line:#33322e; --accent:#ff6b4a; --accent2:#2dd4bf; }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.6;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:720px;margin:0 auto;padding:12px 16px 40px}
+  /* メイン画像（板）は上部に固定し、操作は下でスクロールする */
+  .plate{position:sticky;top:0;z-index:10;background:var(--bg);padding-top:8px}
+  .head{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:6px}
+  .head h1{font-size:18px;margin:0;font-weight:900;letter-spacing:-.01em}
+  .head h1 span{color:var(--accent)}
+  .readout{font-family:var(--mono);font-size:12px;color:var(--muted);white-space:nowrap}
+  .stage{display:flex;justify-content:center;background:#000;border-radius:var(--radius);overflow:hidden;touch-action:none}
+  canvas{display:block;max-width:100%;max-height:62vh;cursor:grab}
+  canvas:active{cursor:grabbing}
+  .row{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+  button,select{font:inherit;font-size:14px;border:1px solid var(--line);background:var(--surface);color:var(--ink);
+    border-radius:999px;padding:8px 14px;min-height:40px}
+  button.on{background:var(--accent2);border-color:var(--accent2);color:#fff}
+  input[type=range]{flex:1;min-width:120px}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:12px 14px;margin-top:12px}
+  .card h2{font-size:13px;margin:0 0 6px;color:var(--muted);font-weight:700;letter-spacing:.04em}
+  .status{font-size:13px;color:var(--muted);margin:6px 0 0;min-height:1.6em}
+  label{font-size:14px;display:flex;align-items:center;gap:6px}
+  #facePreview{width:96px;border-radius:8px;transform:scaleX(-1);display:none}
+  #facePreview.show{display:block}
+  .note{font-size:12.5px;color:var(--muted);margin:6px 0 0}
+</style>
 </head>
 <body>
-<div id="msg">ビューワーを読み込んでいます…<br><span id="pct">0%</span></div>
-<script>
-(function(){
-  var parts=['part1.bin','part2.bin','part3.bin'];
-  var bufs=[], done=0, total=35359999;
-  var pct=document.getElementById('pct');
-  Promise.all(parts.map(function(name){
-    return fetch(name).then(function(r){
-      if(!r.ok) throw new Error(name+' '+r.status);
-      return r.arrayBuffer();
-    }).then(function(b){
-      done+=b.byteLength;
-      pct.textContent=Math.round(done/total*100)+'%';
-      return b;
-    });
-  })).then(function(list){
-    var len=0; list.forEach(function(b){ len+=b.byteLength; });
-    var all=new Uint8Array(len), off=0;
-    list.forEach(function(b){ all.set(new Uint8Array(b),off); off+=b.byteLength; });
-    var html=new TextDecoder('utf-8').decode(all);
-    document.open();
-    document.write(html);
-    document.close();
-  }).catch(function(e){
-    document.getElementById('msg').textContent='読み込みに失敗しました: '+e.message;
-  });
-})();
+<div class="wrap">
+  <div class="plate">
+    <div class="head">
+      <h1>Holo<span>Pixel</span></h1>
+      <div class="readout" id="readout">—</div>
+    </div>
+    <div class="stage" id="stage"><canvas id="view" width="540" height="960"></canvas></div>
+    <!-- 優先する操作は板の直下に置く -->
+    <div class="row">
+      <button id="btnDrag" class="on">ドラッグ</button>
+      <button id="btnTilt">傾き</button>
+      <button id="btnFace">顔</button>
+      <button id="btnCenter">正面にする</button>
+      <button id="btnFlipX">左右反転</button>
+      <button id="btnFlipY">上下反転</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>シーン</h2>
+    <div class="row" style="margin-top:0">
+      <select id="scene">
+        <option value="../samples/station.hpx">駅（IMG_1918）</option>
+        <option value="../samples/station_m2.hpx">駅 M2（多視点で裏側を補完）</option>
+        <option value="../samples/portrait.hpx">肖像（IMG_1922）</option>
+      </select>
+      <button id="btnPlay">一時停止</button>
+      <button id="btnStill">静止画で見る</button>
+    </div>
+    <div class="row"><input type="range" id="seek" min="0" max="1000" value="0"></div>
+    <p class="status" id="status">読み込み中…</p>
+  </div>
+
+  <div class="card">
+    <h2>顔モード</h2>
+    <div class="row" style="margin-top:0;align-items:center">
+      <label><input type="checkbox" id="chkPreview"> カメラ映像を表示</label>
+      <video id="facePreview" playsinline muted></video>
+    </div>
+    <p class="note">前面カメラで目の位置を測り、視点にします（両目の間隔 6.4 cm から距離を推定）。カメラ映像は端末の外に送りません。開始時の位置が「正面」になります。</p>
+  </div>
+
+  <div class="card">
+    <h2>視点</h2>
+    <div class="row" style="margin-top:0">
+      <label style="flex:1">前後 <input type="range" id="dist" min="10" max="300" value="100"></label>
+    </div>
+    <p class="note">ドラッグで上下左右、ホイール・ピンチ・スライダーで前後。数値は窓座標（m）。</p>
+  </div>
+</div>
+
+<script type="module">
+import { HoloPixelPlayer } from './hpx_web.js';
+
+const $ = id => document.getElementById(id);
+const canvas = $('view');
+const player = new HoloPixelPlayer(canvas);
+const params = new URLSearchParams(location.search);
+
+// ---- 視点：すべての入力を「窓座標の 3D 位置 [m]」に変換する ----
+const view = {
+  mode: 'drag',
+  flipX: false, flipY: false,
+  ref: [0, 0, -1.5],      // 基準カメラの位置（＝正面）
+  off: [0, 0],            // 正面からのずれ（ドラッグ・傾き・顔）[m]
+  distScale: 1,           // 前後（1 = 基準距離）
+  smooth: [0, 0, -1.5],   // 平滑化後の視点
+};
+function targetEye() {
+  const sx = view.flipX ? -1 : 1, sy = view.flipY ? -1 : 1;
+  return [view.ref[0] + sx * view.off[0], view.ref[1] + sy * view.off[1], view.ref[2] * view.distScale];
+}
+
+// ---- 描画の大きさ：窓の縦横比で、板の幅に収める ----
+function resize() {
+  if (!player.ready) return;
+  const stage = $('stage');
+  const maxW = stage.clientWidth, maxH = window.innerHeight * 0.62;
+  let w = maxW, h = w / player.aspect;
+  if (h > maxH) { h = maxH; w = h * player.aspect; }
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const s = Math.min(1, 1100 / Math.max(w * dpr, h * dpr));   // 描画の長辺を 1100 px までに
+  canvas.style.width = w + 'px'; canvas.style.height = h + 'px';
+  canvas.width = Math.round(w * dpr * s); canvas.height = Math.round(h * dpr * s);
+}
+window.addEventListener('resize', resize);
+
+// ---- シーンの読み込み ----
+async function load(src, still = false) {
+  $('status').textContent = '読み込み中…';
+  try {
+    const m = await player.load(src, still);
+    if (!m) return;   // 読み込み中に別のシーンへ切り替えられた
+    view.ref = m.refCamera.position.slice();
+    view.off = [0, 0]; view.distScale = 1; $('dist').value = 100;
+    view.smooth = targetEye();
+    resize();
+    $('btnPlay').disabled = !player.isVideo; $('seek').disabled = !player.isVideo;
+    $('btnPlay').textContent = player.isVideo && player.video.paused ? '再生' : '一時停止';
+    $('btnStill').textContent = player.isVideo ? '静止画で見る' : '動画で見る';
+    const mb = m.mobile.atlas;
+    $('status').textContent = `${m.source.path} · ${m.frames.count} フレーム · 窓 ${m.window.size[0]} × ${m.window.size[1]} m · ` +
+      `${player.isVideo ? '動画' : '静止画'} ${mb.width}×${mb.height} ×3` + (player.note ? ` · ${player.note}` : '');
+  } catch (e) {
+    $('status').textContent = '読み込めません: ' + e.message;
+  }
+}
+const initial = params.get('src') || $('scene').value;
+if (params.get('src')) {
+  const o = document.createElement('option'); o.value = o.textContent = initial; $('scene').prepend(o); $('scene').value = initial;
+}
+$('scene').onchange = () => load($('scene').value);
+$('btnStill').onclick = () => load($('scene').value, player.isVideo);
+$('btnPlay').onclick = () => {
+  if (!player.video) return;
+  if (player.video.paused) { player.video.play(); $('btnPlay').textContent = '一時停止'; }
+  else { player.video.pause(); $('btnPlay').textContent = '再生'; }
+};
+$('seek').oninput = () => {
+  const v = player.video; if (!v || !v.duration) return;
+  v.pause(); $('btnPlay').textContent = '再生';
+  v.currentTime = $('seek').value / 1000 * v.duration;
+};
+
+// ---- モード切替 ----
+function setMode(mode) {
+  if (view.mode === 'face' && mode !== 'face') face.stop();
+  if (view.mode === 'tilt' && mode !== 'tilt') tilt.stop();
+  view.mode = mode;
+  for (const [id, m] of [['btnDrag', 'drag'], ['btnTilt', 'tilt'], ['btnFace', 'face']]) $(id).classList.toggle('on', mode === m);
+  view.off = [0, 0];
+}
+$('btnDrag').onclick = () => setMode('drag');
+$('btnTilt').onclick = async () => { if (await tilt.start()) setMode('tilt'); };
+$('btnFace').onclick = async () => { setMode('face'); if (!(await face.start())) setMode('drag'); };
+$('btnCenter').onclick = () => { view.off = [0, 0]; tilt.recenter(); face.recenter(); };
+$('btnFlipX').onclick = () => { view.flipX = !view.flipX; $('btnFlipX').classList.toggle('on', view.flipX); };
+$('btnFlipY').onclick = () => { view.flipY = !view.flipY; $('btnFlipY').classList.toggle('on', view.flipY); };
+$('dist').oninput = () => { view.distScale = $('dist').value / 100; };
+
+// ---- ドラッグ・ホイール・ピンチ ----
+const pointers = new Map();
+let pinch0 = null;
+canvas.addEventListener('pointerdown', e => { canvas.setPointerCapture(e.pointerId); pointers.set(e.pointerId, [e.clientX, e.clientY]); });
+canvas.addEventListener('pointerup', e => { pointers.delete(e.pointerId); pinch0 = null; });
+canvas.addEventListener('pointercancel', e => { pointers.delete(e.pointerId); pinch0 = null; });
+canvas.addEventListener('pointermove', e => {
+  if (!pointers.has(e.pointerId)) return;
+  const [px, py] = pointers.get(e.pointerId);
+  pointers.set(e.pointerId, [e.clientX, e.clientY]);
+  if (pointers.size === 2) {
+    const [a, b] = [...pointers.values()];
+    const d = Math.hypot(a[0] - b[0], a[1] - b[1]);
+    if (pinch0) view.distScale = Math.min(3, Math.max(0.1, view.distScale * pinch0 / d));
+    pinch0 = d; $('dist').value = view.distScale * 100;
+    return;
+  }
+  if (view.mode !== 'drag' || !player.ready) return;
+  // 板の幅いっぱいのドラッグ = 窓の幅ぶんの移動
+  const k = player.m.window.size[0] / canvas.clientWidth;
+  view.off[0] += (e.clientX - px) * k;
+  view.off[1] -= (e.clientY - py) * k;
+});
+canvas.addEventListener('wheel', e => {
+  e.preventDefault();
+  view.distScale = Math.min(3, Math.max(0.1, view.distScale * Math.exp(e.deltaY * 0.001)));
+  $('dist').value = view.distScale * 100;
+}, { passive: false });
+
+// ---- 傾き（iPhone は許可が必要。https のページでのみ動く） ----
+const tilt = {
+  base: null, last: null,
+  async start() {
+    if (typeof DeviceOrientationEvent === 'undefined') { $('status').textContent = 'この端末は傾きセンサーに対応していません'; return false; }
+    if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+      const r = await DeviceOrientationEvent.requestPermission().catch(() => 'denied');
+      if (r !== 'granted') { $('status').textContent = '傾きセンサーの許可が得られませんでした（https のページが必要です）'; return false; }
+    }
+    this.base = null;
+    window.addEventListener('deviceorientation', this.onOrient);
+    return true;
+  },
+  stop() { window.removeEventListener('deviceorientation', this.onOrient); },
+  recenter() { this.base = this.last; },
+  onOrient: e => {
+    if (e.beta == null) return;
+    tilt.last = [e.beta, e.gamma];
+    if (!tilt.base) tilt.base = tilt.last;
+    // 端末を傾ける ＝ 窓を横から覗く。正面からの角度を、基準距離での横ずれに直す
+    const D = -view.ref[2], r = Math.PI / 180;
+    view.off[0] = -D * Math.tan((e.gamma - tilt.base[1]) * r);
+    view.off[1] = D * Math.tan((e.beta - tilt.base[0]) * r);
+  },
+};
+
+// ---- 顔（MediaPipe Face Landmarker。前面カメラ） ----
+const face = {
+  landmarker: null, stream: null, running: false, base: null, last: null,
+  F: 0.755,        // 前面カメラの焦点距離（画像の幅を 1 とした値。水平画角 約 67°）
+  IPD: 0.064,      // 両目の間隔 [m]
+  async start() {
+    if (!navigator.mediaDevices?.getUserMedia) { $('status').textContent = 'カメラが使えません（https のページが必要です）'; return false; }
+    try {
+      this.stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } }, audio: false });
+    } catch (e) { $('status').textContent = 'カメラの許可が得られませんでした'; return false; }
+    const v = $('facePreview');
+    v.srcObject = this.stream; await v.play();
+    if (!this.landmarker) {
+      $('status').textContent = '顔の検出モデルを読み込み中…';
+      const vision = await import('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs');
+      const files = await vision.FilesetResolver.forVisionTasks('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm');
+      this.landmarker = await vision.FaceLandmarker.createFromOptions(files, {
+        baseOptions: { modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task', delegate: 'GPU' },
+        runningMode: 'VIDEO', numFaces: 1 });
+    }
+    $('status').textContent = '顔モード：開始時の位置を正面にします';
+    this.base = null; this.running = true;
+    this.loop();
+    return true;
+  },
+  stop() {
+    this.running = false;
+    this.stream?.getTracks().forEach(t => t.stop());
+    this.stream = null;
+  },
+  recenter() { this.base = this.last; },
+  loop() {
+    if (!this.running) return;
+    const v = $('facePreview');
+    if (v.readyState >= 2) {
+      const r = this.landmarker.detectForVideo(v, performance.now());
+      const lm = r.faceLandmarks?.[0];
+      if (lm) {
+        // 目尻 33 / 263 の中点と間隔から、カメラ基準の目の位置 [m] を出す
+        const a = lm[33], b = lm[263], vw = v.videoWidth, vh = v.videoHeight;
+        const ipd = Math.hypot((a.x - b.x) * vw, (a.y - b.y) * vh) / vw;
+        const D = this.F * this.IPD / ipd;
+        const X = -((a.x + b.x) / 2 - 0.5) * D / this.F;              // 自分の右へ動くと +
+        const Y = -((a.y + b.y) / 2 - 0.5) * (vh / vw) * D / this.F;
+        this.last = [X, Y, D];
+        if (!this.base) this.base = this.last;
+        // 開始時の位置 = 正面（基準カメラの位置）。そこからの角度と距離の比を保って窓座標に移す
+        const [X0, Y0, D0] = this.base, Dr = -view.ref[2];
+        view.off = [(X - X0) / D0 * Dr, (Y - Y0) / D0 * Dr];
+        view.distScale = D / D0; $('dist').value = view.distScale * 100;
+      }
+    }
+    requestAnimationFrame(() => this.loop());
+  },
+};
+$('chkPreview').onchange = () => $('facePreview').classList.toggle('show', $('chkPreview').checked);
+
+// ---- 描画ループ ----
+function frame() {
+  if (player.ready) {
+    const t = targetEye();
+    for (let i = 0; i < 3; i++) view.smooth[i] += (t[i] - view.smooth[i]) * 0.35;   // 入力の平滑化（カクつき対策）
+    player.cam = view.smooth;
+    player.render();
+    const [x, y, z] = view.smooth;
+    const th = Math.atan2(x - view.ref[0], -z) * 180 / Math.PI, ph = Math.atan2(y - view.ref[1], -z) * 180 / Math.PI;
+    $('readout').textContent = `θ ${th.toFixed(1)}° φ ${ph.toFixed(1)}° · x ${x.toFixed(2)} y ${y.toFixed(2)} z ${z.toFixed(2)} m`;
+    const v = player.video;
+    if (v && v.duration && !v.paused) $('seek').value = v.currentTime / v.duration * 1000;
+  }
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+load(initial, params.get('still') === '1');
+
+// 検証用：外から視点を指定して描画する
+window.hpx = { player, view, setEye(x, y, z) { view.off = [x - view.ref[0], y - view.ref[1]]; view.distScale = z / view.ref[2]; view.smooth = targetEye(); } };
 </script>
 </body>
 </html>
