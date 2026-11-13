@@ -1,0 +1,119 @@
+{
+  "format": "HoloPixel",
+  "version": "0.1",
+  "frames": {
+    "count": 90,
+    "fps": 29.98766954377312,
+    "start": 0,
+    "timecode": null,
+    "loop": true
+  },
+  "refCamera": {
+    "position": [
+      0.0,
+      0.0,
+      -1.5
+    ],
+    "fovY": 62.15,
+    "width": 1280,
+    "height": 720
+  },
+  "window": {
+    "center": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "size": [
+      2.5713,
+      1.4464
+    ]
+  },
+  "layers": {
+    "count": 4,
+    "order": "near_to_far",
+    "atlas": {
+      "cols": 2,
+      "rows": 2,
+      "tileWidth": 1280,
+      "tileHeight": 720
+    },
+    "bins": [
+      [
+        0.5,
+        3.878171460035203
+      ],
+      [
+        3.878171460035203,
+        5.478034025934208
+      ],
+      [
+        5.478034025934208,
+        7.163700315065108
+      ],
+      [
+        7.163700315065108,
+        1000.0
+      ]
+    ]
+  },
+  "depth": {
+    "unit": "meter",
+    "space": "refCameraZ",
+    "near": 0.5,
+    "far": 1000.0
+  },
+  "color": {
+    "space": "sRGB",
+    "alpha": "straight"
+  },
+  "files": {
+    "color": "color/{frame:06d}.png",
+    "depth": "depth/{frame:06d}.exr",
+    "confidence": "confidence/{frame:06d}.png"
+  },
+  "confidence": {
+    "own": 255,
+    "otherView": 160,
+    "inpainted": 0
+  },
+  "source": {
+    "path": "2026-11-13_オフィス.mp4",
+    "depthModel": "apple/DepthPro-hf",
+    "frameOffset": 1560,
+    "metersPerSfmUnit": 0.61102,
+    "fusion": {
+      "method": "sfm_multiview",
+      "sfm": "COLMAP (pycolmap)",
+      "radiusSec": 2.0,
+      "sourceFrames": 304,
+      "excluded": [],
+      "depthDir": "work/office_depth1",
+      "depthFit": "local",
+      "edgeThreshold": 0.08,
+      "splat": 2,
+      "candidates": 12,
+      "minViews": 1,
+      "minBlob": 64
+    }
+  },
+  "mobile": {
+    "atlas": {
+      "width": 1280,
+      "height": 720,
+      "tileWidth": 640,
+      "tileHeight": 360
+    },
+    "video": "mobile/hpx.mp4",
+    "still": "mobile/still.webp",
+    "layout": [
+      "color",
+      "depth",
+      "alpha"
+    ],
+    "depth": {
+      "bits": 8,
+      "encoding": "inverseDepthPerLayerBin"
+    }
+  }
+}

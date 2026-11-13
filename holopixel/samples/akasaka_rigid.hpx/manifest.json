@@ -1,0 +1,119 @@
+{
+  "format": "HoloPixel",
+  "version": "0.1",
+  "frames": {
+    "count": 90,
+    "fps": 29.99631494902346,
+    "start": 0,
+    "timecode": null,
+    "loop": true
+  },
+  "refCamera": {
+    "position": [
+      0.0,
+      0.0,
+      -1.5
+    ],
+    "fovY": 60.79,
+    "width": 1080,
+    "height": 1920
+  },
+  "window": {
+    "center": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "size": [
+      0.7919,
+      1.4078
+    ]
+  },
+  "layers": {
+    "count": 4,
+    "order": "near_to_far",
+    "atlas": {
+      "cols": 2,
+      "rows": 2,
+      "tileWidth": 1080,
+      "tileHeight": 1920
+    },
+    "bins": [
+      [
+        0.5,
+        7.7815629262952
+      ],
+      [
+        7.7815629262952,
+        10.545508544583617
+      ],
+      [
+        10.545508544583617,
+        30.294556006377718
+      ],
+      [
+        30.294556006377718,
+        1000.0
+      ]
+    ]
+  },
+  "depth": {
+    "unit": "meter",
+    "space": "refCameraZ",
+    "near": 0.5,
+    "far": 1000.0
+  },
+  "color": {
+    "space": "sRGB",
+    "alpha": "straight"
+  },
+  "files": {
+    "color": "color/{frame:06d}.png",
+    "depth": "depth/{frame:06d}.exr",
+    "confidence": "confidence/{frame:06d}.png"
+  },
+  "confidence": {
+    "own": 255,
+    "otherView": 160,
+    "inpainted": 0
+  },
+  "source": {
+    "path": "IMG_1919.MOV",
+    "depthModel": "apple/DepthPro-hf",
+    "frameOffset": 0,
+    "metersPerSfmUnit": 0.26848,
+    "fusion": {
+      "method": "sfm_multiview",
+      "sfm": "COLMAP (pycolmap)",
+      "radiusSec": 3.0,
+      "sourceFrames": 60,
+      "excluded": [],
+      "depthDir": "work/akasaka_depth1",
+      "depthFit": "local",
+      "edgeThreshold": 0.08,
+      "splat": 2,
+      "candidates": 12,
+      "minViews": 1,
+      "minBlob": 64
+    }
+  },
+  "mobile": {
+    "atlas": {
+      "width": 720,
+      "height": 1280,
+      "tileWidth": 360,
+      "tileHeight": 640
+    },
+    "video": "mobile/hpx.mp4",
+    "still": "mobile/still.webp",
+    "layout": [
+      "color",
+      "depth",
+      "alpha"
+    ],
+    "depth": {
+      "bits": 8,
+      "encoding": "inverseDepthPerLayerBin"
+    }
+  }
+}
