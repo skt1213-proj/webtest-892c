@@ -112,6 +112,10 @@
     "depth": {
       "bits": 8,
       "encoding": "inverseDepthPerLayerBin"
+    },
+    "loop": {
+      "mode": "pingpong",
+      "frames": 178
     }
   }
 }
