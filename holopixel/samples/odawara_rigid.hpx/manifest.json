@@ -1,0 +1,124 @@
+{
+  "format": "HoloPixel",
+  "version": "0.1",
+  "frames": {
+    "count": 90,
+    "fps": 29.97002997002997,
+    "start": 0,
+    "timecode": null,
+    "loop": true
+  },
+  "refCamera": {
+    "position": [
+      0.0,
+      0.0,
+      -1.5
+    ],
+    "fovY": 59.157,
+    "width": 1280,
+    "height": 720
+  },
+  "window": {
+    "center": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "size": [
+      2.4217,
+      1.3622
+    ]
+  },
+  "layers": {
+    "count": 4,
+    "order": "near_to_far",
+    "atlas": {
+      "cols": 2,
+      "rows": 2,
+      "tileWidth": 1280,
+      "tileHeight": 720
+    },
+    "bins": [
+      [
+        0.5,
+        3.0888928304276604
+      ],
+      [
+        3.0888928304276604,
+        9.716392509230982
+      ],
+      [
+        9.716392509230982,
+        12.285739915765008
+      ],
+      [
+        12.285739915765008,
+        1000.0
+      ]
+    ]
+  },
+  "depth": {
+    "unit": "meter",
+    "space": "refCameraZ",
+    "near": 0.5,
+    "far": 1000.0
+  },
+  "color": {
+    "space": "sRGB",
+    "alpha": "straight"
+  },
+  "files": {
+    "color": "color/{frame:06d}.png",
+    "depth": "depth/{frame:06d}.exr",
+    "confidence": "confidence/{frame:06d}.png"
+  },
+  "confidence": {
+    "own": 255,
+    "otherView": 160,
+    "inpainted": 0
+  },
+  "source": {
+    "path": "odawara.mp4",
+    "depthModel": "apple/DepthPro-hf",
+    "frameOffset": 1260,
+    "metersPerSfmUnit": 0.33433,
+    "fusion": {
+      "method": "sfm_multiview",
+      "sfm": "COLMAP (pycolmap)",
+      "radiusSec": 3.0,
+      "sourceFrames": 241,
+      "excluded": [],
+      "depthDir": "work/odawara/depth1",
+      "depthFit": "local",
+      "edgeThreshold": 0.08,
+      "splat": 2,
+      "candidates": 12,
+      "minViews": 1,
+      "minBlob": 64
+    }
+  },
+  "mobile": {
+    "atlas": {
+      "width": 1280,
+      "height": 720,
+      "tileWidth": 640,
+      "tileHeight": 360
+    },
+    "video": "mobile/hpx.mp4",
+    "still": "mobile/still.webp",
+    "layout": [
+      "color",
+      "depth",
+      "alpha"
+    ],
+    "depth": {
+      "bits": 8,
+      "encoding": "inverseDepthPerLayerBin"
+    },
+    "loop": {
+      "mode": "crossfade",
+      "frames": 75,
+      "blend": 15
+    }
+  }
+}
