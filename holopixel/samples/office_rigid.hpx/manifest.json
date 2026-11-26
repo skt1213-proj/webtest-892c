@@ -114,6 +114,11 @@
     "depth": {
       "bits": 8,
       "encoding": "inverseDepthPerLayerBin"
+    },
+    "loop": {
+      "mode": "crossfade",
+      "frames": 75,
+      "blend": 15
     }
   }
 }
