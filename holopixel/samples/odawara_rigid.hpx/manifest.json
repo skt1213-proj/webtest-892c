@@ -2,7 +2,7 @@
   "format": "HoloPixel",
   "version": "0.1",
   "frames": {
-    "count": 90,
+    "count": 61,
     "fps": 29.97002997002997,
     "start": 0,
     "timecode": null,
@@ -25,9 +25,10 @@
       0.0
     ],
     "size": [
-      2.4217,
-      1.3622
-    ]
+      2.0181,
+      1.1352
+    ],
+    "scale": 0.6667
   },
   "layers": {
     "count": 4,
@@ -41,18 +42,18 @@
     "bins": [
       [
         0.5,
-        3.0888928304276604
+        3.412440858414003
       ],
       [
-        3.0888928304276604,
-        9.716392509230982
+        3.412440858414003,
+        10.438707119895076
       ],
       [
-        9.716392509230982,
-        12.285739915765008
+        10.438707119895076,
+        12.580018595722983
       ],
       [
-        12.285739915765008,
+        12.580018595722983,
         1000.0
       ]
     ]
@@ -80,7 +81,7 @@
   "source": {
     "path": "odawara.mp4",
     "depthModel": "apple/DepthPro-hf",
-    "frameOffset": 1260,
+    "frameOffset": 1310,
     "metersPerSfmUnit": 0.33433,
     "fusion": {
       "method": "sfm_multiview",
@@ -88,13 +89,25 @@
       "radiusSec": 3.0,
       "sourceFrames": 241,
       "excluded": [],
-      "depthDir": "work/odawara/depth1",
+      "depthDir": "work/odawara/depth1s",
       "depthFit": "local",
       "edgeThreshold": 0.08,
       "splat": 2,
       "candidates": 12,
       "minViews": 1,
-      "minBlob": 64
+      "minBlob": 64,
+      "fixedCam": 1308
+    },
+    "static": {
+      "from": "full_fixed.hpx",
+      "loop": [
+        74,
+        134
+      ],
+      "seamStep": 0.4625,
+      "medianStep": 0.2337,
+      "thr": 0.12,
+      "dynamicArea": 0.009
     }
   },
   "mobile": {
@@ -116,9 +129,8 @@
       "encoding": "inverseDepthPerLayerBin"
     },
     "loop": {
-      "mode": "crossfade",
-      "frames": 75,
-      "blend": 15
+      "mode": "cut",
+      "frames": 61
     }
   }
 }
