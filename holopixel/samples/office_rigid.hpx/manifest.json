@@ -2,7 +2,7 @@
   "format": "HoloPixel",
   "version": "0.1",
   "frames": {
-    "count": 90,
+    "count": 61,
     "fps": 29.98766954377312,
     "start": 0,
     "timecode": null,
@@ -25,9 +25,10 @@
       0.0
     ],
     "size": [
-      2.5713,
-      1.4464
-    ]
+      2.1428,
+      1.2053
+    ],
+    "scale": 0.6667
   },
   "layers": {
     "count": 4,
@@ -41,18 +42,18 @@
     "bins": [
       [
         0.5,
-        3.878171460035203
+        3.778804276782419
       ],
       [
-        3.878171460035203,
-        5.478034025934208
+        3.778804276782419,
+        5.538582999167465
       ],
       [
-        5.478034025934208,
-        7.163700315065108
+        5.538582999167465,
+        7.188864473604538
       ],
       [
-        7.163700315065108,
+        7.188864473604538,
         1000.0
       ]
     ]
@@ -80,7 +81,7 @@
   "source": {
     "path": "2026-11-13_オフィス.mp4",
     "depthModel": "apple/DepthPro-hf",
-    "frameOffset": 1560,
+    "frameOffset": 1608,
     "metersPerSfmUnit": 0.61102,
     "fusion": {
       "method": "sfm_multiview",
@@ -88,13 +89,25 @@
       "radiusSec": 2.0,
       "sourceFrames": 304,
       "excluded": [],
-      "depthDir": "work/office_depth1",
+      "depthDir": "work/office_depth1s",
       "depthFit": "local",
       "edgeThreshold": 0.08,
       "splat": 2,
       "candidates": 12,
       "minViews": 1,
-      "minBlob": 64
+      "minBlob": 64,
+      "fixedCam": 1650
+    },
+    "static": {
+      "from": "office_full_fixed.hpx",
+      "loop": [
+        102,
+        162
+      ],
+      "seamStep": 0.0254,
+      "medianStep": 0.0309,
+      "thr": 0.12,
+      "dynamicArea": 0.0006
     }
   },
   "mobile": {
@@ -116,9 +129,8 @@
       "encoding": "inverseDepthPerLayerBin"
     },
     "loop": {
-      "mode": "crossfade",
-      "frames": 75,
-      "blend": 15
+      "mode": "cut",
+      "frames": 61
     }
   }
 }
